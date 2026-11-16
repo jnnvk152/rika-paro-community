@@ -15,6 +15,6 @@ I’ve prepared a separate **English version**, without my personal installation
 
 **https://github.com/jnnvk152/rika-paro-community**
 
-The source is **free to use, modify and share under AGPL-3.0-or-later**. You’re welcome to use it as a starting point for your own project; you configure your own hardware and cloud services. It includes a demo and setup instructions. Return-date automation is included but still awaiting a real-world scheduled-return test.
+The source is **free to use, modify and share under AGPL-3.0**. You’re welcome to use it as a starting point for your own project; you configure your own hardware and cloud services. It includes a demo and setup instructions. Return-date automation is included but still awaiting a real-world scheduled-return test.
 
 Feedback, improvements and experiences with other RIKA models are very welcome!

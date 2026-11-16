@@ -6,6 +6,6 @@
 - **Enclosure:** broodforce, [Thingiverse 6640089](https://www.thingiverse.com/thing:6640089), CC BY 4.0. Original TOP/BOTTOM STL files remain in `docs/hardware/case/`. Dimensional checks do not guarantee fit for every board variant.
 - **Libraries:** bundled Curier and Strata retain their own licence files. Other dependencies carry their package licences.
 
-Source is provided under **AGPL-3.0-or-later**, with separately attributed components/assets under their stated licences. See `LICENSE`. Retain attribution and fulfil the licence’s source-sharing requirements when distributing changes or offering a modified network service.
+Source is provided under **AGPL-3.0**, with separately attributed components/assets under their stated licences. See `LICENSE`. Retain attribution and fulfil the licence’s source-sharing requirements when distributing changes or offering a modified network service.
 
 RIKA names identify compatible equipment; the project is not affiliated with or endorsed by RIKA.

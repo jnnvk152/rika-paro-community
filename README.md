@@ -4,7 +4,7 @@ A phone-first, self-hosted web app and ESP32-S3 extension for a RIKA PARO stove.
 
 This grew out of the [Open Firenet discussion on the Home Assistant forum](https://community.home-assistant.io/t/open-firenet-local-usb-cdc-gateway-for-rika-pellet-stoves/1012233). I wanted to control my PARO from my phone without buying the official Firenet module. Open Firenet supplied the essential USB communication foundation; I built an app and additional routines around it, with help from Codex. Thanks to the original author and everyone who shared their findings.
 
-**Free and open source under AGPL-3.0-or-later.** Use, study, modify and share it as a starting point for your project, subject to the licence. This is source for your own installation, not a shared cloud service. Hosting and third-party service quotas or charges are your responsibility.
+**Free and open source under AGPL-3.0.** Use, study, modify and share it as a starting point for your project, subject to the licence. This is source for your own installation, not a shared cloud service. Hosting and third-party service quotas or charges are your responsibility.
 
 ## What this adds
 
