@@ -1,0 +1,13 @@
+{
+  "projectId": "your-firebase-project",
+  "apiKey": "YOUR_FIREBASE_WEB_API_KEY",
+  "appId": "YOUR_FIREBASE_WEB_APP_ID",
+  "messagingSenderId": "YOUR_FIREBASE_SENDER_ID",
+  "databaseURL": "https://your-firebase-project-default-rtdb.europe-west1.firebasedatabase.app",
+  "storageBucket": "your-firebase-project.firebasestorage.app",
+  "authDomain": "your-firebase-project.firebaseapp.com",
+  "googleClientId": "YOUR_GOOGLE_WEB_CLIENT_ID.apps.googleusercontent.com",
+  "appOrigin": "https://your-firebase-project.firebaseapp.com",
+  "ownerEmail": "you@example.com",
+  "cloudflareAccountId": ""
+}

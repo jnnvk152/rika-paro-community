@@ -1,0 +1,32 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "paro-connection-watch",
+  "main": "worker.js",
+  "compatibility_date": "2026-10-19",
+  "workers_dev": false,
+  "preview_urls": false,
+  "triggers": {
+    "crons": [
+      "* * * * *",
+      "*/2 * * * *",
+      "1-59/2 * * * *"
+    ]
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "invocation_logs": false
+    }
+  },
+  "secrets": {
+    "required": [
+      "PARO_WATCH_FIREBASE",
+      "PARO_WATCH_VAPID"
+    ]
+  },
+  "vars": {
+    "PARO_DATABASE_URL": "https://example-rika-project-default-rtdb.europe-west1.firebasedatabase.app",
+    "PARO_APP_ORIGIN": "https://example-rika-project.firebaseapp.com"
+  }
+}

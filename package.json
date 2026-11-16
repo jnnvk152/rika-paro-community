@@ -1,0 +1,26 @@
+{
+  "name": "rika-paro-community",
+  "version": "0.8.0",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vite build",
+    "test": "node --test tests/*.test.js",
+    "test:rules": "firebase emulators:exec --config firebase.test.json --only database --project demo-paro 'node --test tests/rules.integration.js'",
+    "local": "node scripts/local-server.js",
+    "local:phone": "node scripts/local-server.js --lan",
+    "configure": "node scripts/configure.mjs"
+  },
+  "dependencies": {
+    "firebase": "13.1.0"
+  },
+  "devDependencies": {
+    "@block65/webcrypto-web-push": "2.0.0",
+    "@firebase/rules-unit-testing": "6.0.0",
+    "firebase-tools": "15.34.1",
+    "vite": "8.3.5",
+    "wrangler": "4.152.0"
+  }
+}

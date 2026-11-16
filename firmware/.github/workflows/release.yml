@@ -1,0 +1,154 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  release:
+    name: Build, Sign & Release Firmware
+    runs-on: ubuntu-latest
+    env:
+      MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run native unit tests
+        run: |
+          chmod +x test/build_and_test.sh
+          ./test/build_and_test.sh
+
+      - name: Cache Arduino packages and build cache
+        uses: actions/cache@v4
+        id: arduino-cache
+        with:
+          path: |
+            ~/.arduino15/packages
+            ~/.arduino15/cache_root.sha256
+            ~/.arduino15/build-cache
+          key: esp32-release-${{ runner.os }}-${{ github.sha }}
+          restore-keys: |
+            esp32-build-${{ runner.os }}-
+            esp32-core-3.3.11-${{ runner.os }}
+
+      - name: Setup Arduino CLI
+        uses: arduino/setup-arduino-cli@v2
+
+      - name: Install ESP32 Platform Core
+        if: steps.arduino-cache.outputs.cache-hit != 'true'
+        run: |
+          arduino-cli config init --overwrite
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32@3.3.11
+          rm -rf ~/.arduino15/staging
+          CALCULATED_HASH=$(cd ~/.arduino15 && find packages -type f -exec sha256sum {} + | sort -k2 | sha256sum | awk '{print $1}')
+          echo "$CALCULATED_HASH" > ~/.arduino15/cache_root.sha256
+          echo "Installed ESP32 core SHA256: $CALCULATED_HASH"
+          if [ -f .github/integrity/esp32-core-3.3.11.sha256 ]; then
+            EXPECTED_HASH=$(cat .github/integrity/esp32-core-3.3.11.sha256 | tr -d '[:space:]')
+            if [ "$CALCULATED_HASH" != "$EXPECTED_HASH" ]; then
+              echo "::error::Installed core SHA ($CALCULATED_HASH) != expected pinned SHA ($EXPECTED_HASH)"
+              exit 1
+            fi
+          fi
+
+      - name: Verify Cache Integrity
+        if: steps.arduino-cache.outputs.cache-hit == 'true'
+        run: |
+          RESTORED_HASH=$(cd ~/.arduino15 && find packages -type f -exec sha256sum {} + | sort -k2 | sha256sum | awk '{print $1}')
+          echo "Restored cache SHA256: $RESTORED_HASH"
+          if [ -f .github/integrity/esp32-core-3.3.11.sha256 ]; then
+            EXPECTED_HASH=$(cat .github/integrity/esp32-core-3.3.11.sha256 | tr -d '[:space:]')
+            if [ "$RESTORED_HASH" != "$EXPECTED_HASH" ]; then
+              echo "::error::Cache integrity violation! Restored SHA ($RESTORED_HASH) != pinned SHA ($EXPECTED_HASH)"
+              exit 1
+            fi
+            echo "Verified against pinned repository hash: OK"
+          else
+            STORED_HASH=$(cat ~/.arduino15/cache_root.sha256 2>/dev/null || echo "")
+            if [ "$RESTORED_HASH" != "$STORED_HASH" ]; then
+              echo "::error::Cache corruption! Restored SHA ($RESTORED_HASH) != stored SHA ($STORED_HASH)"
+              exit 1
+            fi
+            echo "Verified against stored cache hash: OK ($RESTORED_HASH)"
+          fi
+
+      - name: Restore Arduino CLI Config
+        if: steps.arduino-cache.outputs.cache-hit == 'true'
+        run: |
+          arduino-cli config init --overwrite
+          arduino-cli config add board_manager.additional_urls https://espressif.github.io/arduino-esp32/package_esp32_index.json
+          arduino-cli core update-index
+
+      - name: Compile ESP32-S3 Firmware
+        run: |
+          mkdir -p .build ~/.arduino15/build-cache
+          arduino-cli compile \
+            --fqbn esp32:esp32:esp32s3:USBMode=default,CDCOnBoot=default,FlashSize=4M,PartitionScheme=min_spiffs \
+            --build-cache-path ~/.arduino15/build-cache \
+            --output-dir .build \
+            open-firenet/open-firenet.ino
+
+      - name: Package Release Assets
+        run: |
+          mkdir -p dist
+          cp .build/open-firenet.ino.merged.bin dist/open-firenet-factory.bin
+          cp .build/open-firenet.ino.bin dist/open-firenet-ota.bin
+          cp .build/open-firenet.ino.bootloader.bin dist/open-firenet-bootloader.bin
+          cp .build/open-firenet.ino.partitions.bin dist/open-firenet-partitions.bin
+
+          cd dist
+          sha256sum open-firenet-factory.bin open-firenet-ota.bin open-firenet-bootloader.bin open-firenet-partitions.bin > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Install Minisign
+        run: |
+          curl -sL https://github.com/jedisct1/minisign/releases/download/0.12/minisign-0.12-linux.tar.gz | tar -xz -C /tmp/
+          sudo cp /tmp/minisign-linux/x86_64/minisign /usr/local/bin/minisign
+          minisign -v
+
+      - name: Sign Checksums with Minisign
+        if: env.MINISIGN_SECRET_KEY != ''
+        run: |
+          if [[ "$MINISIGN_SECRET_KEY" != *"untrusted comment"* ]]; then
+            printf "untrusted comment: minisign encrypted secret key\n%s\n" "$MINISIGN_SECRET_KEY" > /tmp/minisign.key
+          else
+            printf "%s\n" "$MINISIGN_SECRET_KEY" > /tmp/minisign.key
+          fi
+          minisign -S -m dist/SHA256SUMS -s /tmp/minisign.key -x dist/SHA256SUMS.minisig -t "Release ${{ github.ref_name }}" </dev/null
+          rm -f /tmp/minisign.key
+          minisign -V -m dist/SHA256SUMS -p minisign.pub -x dist/SHA256SUMS.minisig
+          echo "Minisign signature verified successfully."
+
+      - name: Generate SLSA Build Attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            dist/open-firenet-factory.bin
+            dist/open-firenet-ota.bin
+            dist/SHA256SUMS
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          # Created as a draft: the title and the notes are written by hand, then the release is published from
+          # the GitHub page. A draft is invisible to the installer and to the "latest release" API until then.
+          draft: true
+          generate_release_notes: true
+          fail_on_unmatched_files: false
+          files: |
+            dist/open-firenet-factory.bin
+            dist/open-firenet-ota.bin
+            dist/open-firenet-bootloader.bin
+            dist/open-firenet-partitions.bin
+            dist/SHA256SUMS
+            dist/SHA256SUMS.minisig

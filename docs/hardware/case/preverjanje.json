@@ -1,0 +1,27 @@
+{
+  "model_url": "https://www.thingiverse.com/thing:6640089",
+  "creator": "broodforce",
+  "license": "CC BY 4.0",
+  "board_nominal_mm": [
+    62.74,
+    25.4,
+    1.6
+  ],
+  "pcb_recess_mm": [
+    62.94,
+    25.6,
+    1.6
+  ],
+  "clearance_per_side_mm": 0.1,
+  "usb_shell_width_mm": 7.8,
+  "usb_opening_width_mm": 8.8,
+  "usb_centers_mm": [
+    -6.675,
+    6.675
+  ],
+  "printed_fit_tested": false,
+  "files": {
+    "BOTTOM.stl": "8ca7f6962221e5721ee98592a30924c99fb9186359bdba7c965d5ab0f177503f",
+    "TOP.stl": "16caba02c0e7d5074efb238216bef75ff383d8d04626556fcdb48d836e05be7a"
+  }
+}

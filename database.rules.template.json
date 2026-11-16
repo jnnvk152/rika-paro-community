@@ -1,0 +1,1037 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "deviceAccess": {
+      ".read": false,
+      ".write": false
+    },
+    "devices": {
+      "$deviceId": {
+        "telemetry": {
+          ".read": "((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))",
+          ".write": "auth != null && auth.uid == root.child('deviceAccess').child($deviceId).child('uid').val()",
+          ".validate": "newData.hasChildren(['updatedAt','session','ready','state'])",
+          "updatedAt": {
+            ".validate": "newData.isNumber() && newData.val() == now",
+            ".read": "($deviceId == 'paro' && (auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val())) || ($deviceId == 'paro' && (auth != null && auth.uid == root.child('statisticsAccess/paro/uid').val()))"
+          },
+          "session": {
+            ".validate": "newData.isString() && newData.val().matches(/^[a-f0-9]{32}$/)"
+          },
+          "ready": {
+            ".validate": "newData.isBoolean()",
+            ".read": "($deviceId == 'paro' && (auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val())) || ($deviceId == 'paro' && (auth != null && auth.uid == root.child('statisticsAccess/paro/uid').val()))"
+          },
+          "state": {
+            ".validate": "newData.hasChildren(['stove','sensors','controls','version_ack','device'])",
+            "sensors": {
+              "pellets_total_kg": {
+                ".read": "((auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val()) && $deviceId == 'paro') || ($deviceId == 'paro' && (auth != null && auth.uid == root.child('statisticsAccess/paro/uid').val()))"
+              },
+              "pellet_hours": {
+                ".read": "((auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val()) && $deviceId == 'paro') || ($deviceId == 'paro' && (auth != null && auth.uid == root.child('statisticsAccess/paro/uid').val()))"
+              }
+            },
+            "hopper": {
+              ".read": "(auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val()) && $deviceId == 'paro'"
+            },
+            "version_ack": {
+              ".read": "($deviceId == 'paro' && (auth != null && auth.uid == root.child('statisticsAccess/paro/uid').val()))"
+            },
+            "stove": {
+              "state": {
+                ".read": "($deviceId == 'paro' && (auth != null && auth.uid == root.child('statisticsAccess/paro/uid').val()))"
+              },
+              "is_burning": {
+                ".read": "($deviceId == 'paro' && (auth != null && auth.uid == root.child('statisticsAccess/paro/uid').val()))"
+              },
+              "has_error": {
+                ".read": "($deviceId == 'paro' && (auth != null && auth.uid == root.child('statisticsAccess/paro/uid').val()))"
+              }
+            }
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "command": {
+          ".read": "auth != null && auth.uid == root.child('deviceAccess').child($deviceId).child('uid').val()",
+          ".write": "((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true)) && newData.exists() && root.child('devices').child($deviceId).child('telemetry/ready').val() == true && root.child('devices').child($deviceId).child('telemetry/updatedAt').val() > now - 30000 && (!data.exists() || data.child('expiresAt').val() <= now || (root.child('devices').child($deviceId).child('receipt/id').val() == data.child('id').val() && (root.child('devices').child($deviceId).child('receipt/status').val() == 'sent' || root.child('devices').child($deviceId).child('receipt/status').val() == 'rejected'))) && (!data.exists() || newData.child('id').val() != data.child('id').val())",
+          ".validate": "newData.hasChildren(['id','session','issuedAt','expiresAt']) && (newData.hasChild('on') || newData.hasChild('mode') || newData.hasChild('power_percent') || newData.hasChild('target_temperature') || newData.hasChild('schedule') || newData.hasChild('cycle_action')) && (!newData.hasChild('schedule') || (!newData.hasChild('on') && !newData.hasChild('target_temperature') && (!newData.hasChild('mode') || newData.child('mode').val() == 'auto') && root.child('devices').child($deviceId).child('telemetry/state/device/capabilities/schedule').val() == true && root.child('devices').child($deviceId).child('telemetry/state/schedule').exists())) && (!newData.hasChild('cycle_action') || (!newData.hasChild('on') && !newData.hasChild('mode') && !newData.hasChild('power_percent') && !newData.hasChild('target_temperature') && !newData.hasChild('schedule')))",
+          "id": {
+            ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{16,64}$/)"
+          },
+          "session": {
+            ".validate": "newData.isString() && newData.val() == root.child('devices').child($deviceId).child('telemetry/session').val()"
+          },
+          "issuedAt": {
+            ".validate": "newData.isNumber() && newData.val() == now"
+          },
+          "expiresAt": {
+            ".validate": "newData.isNumber() && newData.val() > now && newData.val() <= now + 15000"
+          },
+          "on": {
+            ".validate": "newData.isBoolean()"
+          },
+          "mode": {
+            ".validate": "newData.val() == 'manual' || newData.val() == 'auto' || newData.val() == 'comfort'"
+          },
+          "power_percent": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 30 && newData.val() <= 100"
+          },
+          "target_temperature": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 14 && newData.val() <= 28"
+          },
+          "$other": {
+            ".validate": false
+          },
+          "schedule": {
+            ".validate": "newData.hasChildren(['active','setback_temperature','slots'])",
+            "active": {
+              ".validate": "newData.isBoolean()"
+            },
+            "setback_temperature": {
+              ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 12 && newData.val() <= 22"
+            },
+            "slots": {
+              ".validate": "newData.hasChildren([\"heatTimeMon1\", \"heatTimeMon2\", \"heatTimeTue1\", \"heatTimeTue2\", \"heatTimeWed1\", \"heatTimeWed2\", \"heatTimeThu1\", \"heatTimeThu2\", \"heatTimeFri1\", \"heatTimeFri2\", \"heatTimeSat1\", \"heatTimeSat2\", \"heatTimeSun1\", \"heatTimeSun2\"]) && (newData.child('heatTimeMon1').val() == 0 || newData.child('heatTimeMon2').val() == 0 || newData.child('heatTimeMon1').val() % 10000 <= (newData.child('heatTimeMon2').val() - newData.child('heatTimeMon2').val() % 10000) / 10000 || newData.child('heatTimeMon2').val() % 10000 <= (newData.child('heatTimeMon1').val() - newData.child('heatTimeMon1').val() % 10000) / 10000) && (newData.child('heatTimeTue1').val() == 0 || newData.child('heatTimeTue2').val() == 0 || newData.child('heatTimeTue1').val() % 10000 <= (newData.child('heatTimeTue2').val() - newData.child('heatTimeTue2').val() % 10000) / 10000 || newData.child('heatTimeTue2').val() % 10000 <= (newData.child('heatTimeTue1').val() - newData.child('heatTimeTue1').val() % 10000) / 10000) && (newData.child('heatTimeWed1').val() == 0 || newData.child('heatTimeWed2').val() == 0 || newData.child('heatTimeWed1').val() % 10000 <= (newData.child('heatTimeWed2').val() - newData.child('heatTimeWed2').val() % 10000) / 10000 || newData.child('heatTimeWed2').val() % 10000 <= (newData.child('heatTimeWed1').val() - newData.child('heatTimeWed1').val() % 10000) / 10000) && (newData.child('heatTimeThu1').val() == 0 || newData.child('heatTimeThu2').val() == 0 || newData.child('heatTimeThu1').val() % 10000 <= (newData.child('heatTimeThu2').val() - newData.child('heatTimeThu2').val() % 10000) / 10000 || newData.child('heatTimeThu2').val() % 10000 <= (newData.child('heatTimeThu1').val() - newData.child('heatTimeThu1').val() % 10000) / 10000) && (newData.child('heatTimeFri1').val() == 0 || newData.child('heatTimeFri2').val() == 0 || newData.child('heatTimeFri1').val() % 10000 <= (newData.child('heatTimeFri2').val() - newData.child('heatTimeFri2').val() % 10000) / 10000 || newData.child('heatTimeFri2').val() % 10000 <= (newData.child('heatTimeFri1').val() - newData.child('heatTimeFri1').val() % 10000) / 10000) && (newData.child('heatTimeSat1').val() == 0 || newData.child('heatTimeSat2').val() == 0 || newData.child('heatTimeSat1').val() % 10000 <= (newData.child('heatTimeSat2').val() - newData.child('heatTimeSat2').val() % 10000) / 10000 || newData.child('heatTimeSat2').val() % 10000 <= (newData.child('heatTimeSat1').val() - newData.child('heatTimeSat1').val() % 10000) / 10000) && (newData.child('heatTimeSun1').val() == 0 || newData.child('heatTimeSun2').val() == 0 || newData.child('heatTimeSun1').val() % 10000 <= (newData.child('heatTimeSun2').val() - newData.child('heatTimeSun2').val() % 10000) / 10000 || newData.child('heatTimeSun2').val() % 10000 <= (newData.child('heatTimeSun1').val() - newData.child('heatTimeSun1').val() % 10000) / 10000)",
+              "heatTimeMon1": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && (newData.val() == 0 || (((newData.val() - newData.val() % 10000) / 10000) <= 2359 && (newData.val() % 10000) <= 2359 && ((newData.val() - newData.val() % 10000) / 10000) % 100 < 60 && (newData.val() % 10000) % 100 < 60 && ((newData.val() - newData.val() % 10000) / 10000) < (newData.val() % 10000)))"
+              },
+              "heatTimeMon2": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && (newData.val() == 0 || (((newData.val() - newData.val() % 10000) / 10000) <= 2359 && (newData.val() % 10000) <= 2359 && ((newData.val() - newData.val() % 10000) / 10000) % 100 < 60 && (newData.val() % 10000) % 100 < 60 && ((newData.val() - newData.val() % 10000) / 10000) < (newData.val() % 10000)))"
+              },
+              "heatTimeTue1": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && (newData.val() == 0 || (((newData.val() - newData.val() % 10000) / 10000) <= 2359 && (newData.val() % 10000) <= 2359 && ((newData.val() - newData.val() % 10000) / 10000) % 100 < 60 && (newData.val() % 10000) % 100 < 60 && ((newData.val() - newData.val() % 10000) / 10000) < (newData.val() % 10000)))"
+              },
+              "heatTimeTue2": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && (newData.val() == 0 || (((newData.val() - newData.val() % 10000) / 10000) <= 2359 && (newData.val() % 10000) <= 2359 && ((newData.val() - newData.val() % 10000) / 10000) % 100 < 60 && (newData.val() % 10000) % 100 < 60 && ((newData.val() - newData.val() % 10000) / 10000) < (newData.val() % 10000)))"
+              },
+              "heatTimeWed1": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && (newData.val() == 0 || (((newData.val() - newData.val() % 10000) / 10000) <= 2359 && (newData.val() % 10000) <= 2359 && ((newData.val() - newData.val() % 10000) / 10000) % 100 < 60 && (newData.val() % 10000) % 100 < 60 && ((newData.val() - newData.val() % 10000) / 10000) < (newData.val() % 10000)))"
+              },
+              "heatTimeWed2": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && (newData.val() == 0 || (((newData.val() - newData.val() % 10000) / 10000) <= 2359 && (newData.val() % 10000) <= 2359 && ((newData.val() - newData.val() % 10000) / 10000) % 100 < 60 && (newData.val() % 10000) % 100 < 60 && ((newData.val() - newData.val() % 10000) / 10000) < (newData.val() % 10000)))"
+              },
+              "heatTimeThu1": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && (newData.val() == 0 || (((newData.val() - newData.val() % 10000) / 10000) <= 2359 && (newData.val() % 10000) <= 2359 && ((newData.val() - newData.val() % 10000) / 10000) % 100 < 60 && (newData.val() % 10000) % 100 < 60 && ((newData.val() - newData.val() % 10000) / 10000) < (newData.val() % 10000)))"
+              },
+              "heatTimeThu2": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && (newData.val() == 0 || (((newData.val() - newData.val() % 10000) / 10000) <= 2359 && (newData.val() % 10000) <= 2359 && ((newData.val() - newData.val() % 10000) / 10000) % 100 < 60 && (newData.val() % 10000) % 100 < 60 && ((newData.val() - newData.val() % 10000) / 10000) < (newData.val() % 10000)))"
+              },
+              "heatTimeFri1": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && (newData.val() == 0 || (((newData.val() - newData.val() % 10000) / 10000) <= 2359 && (newData.val() % 10000) <= 2359 && ((newData.val() - newData.val() % 10000) / 10000) % 100 < 60 && (newData.val() % 10000) % 100 < 60 && ((newData.val() - newData.val() % 10000) / 10000) < (newData.val() % 10000)))"
+              },
+              "heatTimeFri2": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && (newData.val() == 0 || (((newData.val() - newData.val() % 10000) / 10000) <= 2359 && (newData.val() % 10000) <= 2359 && ((newData.val() - newData.val() % 10000) / 10000) % 100 < 60 && (newData.val() % 10000) % 100 < 60 && ((newData.val() - newData.val() % 10000) / 10000) < (newData.val() % 10000)))"
+              },
+              "heatTimeSat1": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && (newData.val() == 0 || (((newData.val() - newData.val() % 10000) / 10000) <= 2359 && (newData.val() % 10000) <= 2359 && ((newData.val() - newData.val() % 10000) / 10000) % 100 < 60 && (newData.val() % 10000) % 100 < 60 && ((newData.val() - newData.val() % 10000) / 10000) < (newData.val() % 10000)))"
+              },
+              "heatTimeSat2": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && (newData.val() == 0 || (((newData.val() - newData.val() % 10000) / 10000) <= 2359 && (newData.val() % 10000) <= 2359 && ((newData.val() - newData.val() % 10000) / 10000) % 100 < 60 && (newData.val() % 10000) % 100 < 60 && ((newData.val() - newData.val() % 10000) / 10000) < (newData.val() % 10000)))"
+              },
+              "heatTimeSun1": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && (newData.val() == 0 || (((newData.val() - newData.val() % 10000) / 10000) <= 2359 && (newData.val() % 10000) <= 2359 && ((newData.val() - newData.val() % 10000) / 10000) % 100 < 60 && (newData.val() % 10000) % 100 < 60 && ((newData.val() - newData.val() % 10000) / 10000) < (newData.val() % 10000)))"
+              },
+              "heatTimeSun2": {
+                ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && (newData.val() == 0 || (((newData.val() - newData.val() % 10000) / 10000) <= 2359 && (newData.val() % 10000) <= 2359 && ((newData.val() - newData.val() % 10000) / 10000) % 100 < 60 && (newData.val() % 10000) % 100 < 60 && ((newData.val() - newData.val() % 10000) / 10000) < (newData.val() % 10000)))"
+              },
+              "$other": {
+                ".validate": false
+              }
+            },
+            "$other": {
+              ".validate": false
+            }
+          },
+          "cycle_action": {
+            ".validate": "(newData.val() == 'pause' || newData.val() == 'resume') && root.child('devices').child($deviceId).child('telemetry/state/device/capabilities/comfort_cycle').val() == true && root.child('devices').child($deviceId).child('telemetry/state/home/cycle/enabled').val() == true && (newData.val() == 'pause' || (root.child('devices').child($deviceId).child('telemetry/state/stove/has_error').val() == false && root.child('devices').child($deviceId).child('telemetry/state/stove/state').val() != 'splitlog' && root.child('devices').child($deviceId).child('telemetry/state/sensors/room_sensor_connected').val() == true))"
+          }
+        },
+        "receipt": {
+          ".read": "((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))",
+          ".write": "auth != null && auth.uid == root.child('deviceAccess').child($deviceId).child('uid').val()",
+          ".validate": "newData.hasChildren(['id','status','updatedAt','reason'])",
+          "id": {
+            ".validate": "newData.isString() && newData.val().length <= 64"
+          },
+          "status": {
+            ".validate": "newData.val() == 'sent' || newData.val() == 'rejected'"
+          },
+          "updatedAt": {
+            ".validate": "newData.isNumber() && newData.val() == now"
+          },
+          "reason": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "ownerCheck": {
+      ".read": "auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com'",
+      ".write": false
+    },
+    "members": {
+      ".read": "auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com'",
+      "$uid": {
+        ".read": "(auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && auth.uid == $uid",
+        ".write": "auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com'",
+        ".validate": "newData.hasChildren(['email','enabled','createdAt']) && newData.child('email').val() == root.child('accessRequests').child($uid).child('email').val()",
+        "email": {
+          ".validate": "newData.isString() && newData.val().length < 255"
+        },
+        "enabled": {
+          ".validate": "newData.val() == true",
+          ".read": "(auth != null && auth.uid == root.child('deviceAccess').child('paro').child('uid').val()) || (auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val())"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() == now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "accessRequests": {
+      ".read": "auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com'",
+      "$uid": {
+        ".read": "(auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && auth.uid == $uid",
+        ".write": "(auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && auth.uid == $uid && newData.exists() && (!data.exists() || data.child('createdAt').val() < now - 60000))",
+        ".validate": "newData.hasChildren(['email','createdAt']) && auth.uid == $uid",
+        "email": {
+          ".validate": "newData.isString() && newData.val() == auth.token.email && newData.val().length < 255"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && newData.val() == now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "notificationConfig": {
+      ".read": "(((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))) || (auth != null && auth.uid == root.child('deviceAccess').child('paro').child('uid').val())",
+      ".write": false
+    },
+    "pushSubscriptions": {
+      "$uid": {
+        ".read": "(auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && auth.uid == $uid && (((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true)))",
+        "$subscriptionId": {
+          ".write": "(auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && auth.uid == $uid && (!newData.exists() || (((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))))",
+          ".validate": "$subscriptionId.matches(/^[a-f0-9]{64}$/) && newData.hasChildren(['endpoint','keys','deviceId','enabled','createdAt','owner'])",
+          "endpoint": {
+            ".validate": "newData.isString() && newData.val().length <= 2048 && newData.val().matches(/^https:\\/\\/(fcm\\.googleapis\\.com\\/fcm\\/send\\/|web\\.push\\.apple\\.com\\/|updates\\.push\\.services\\.mozilla\\.com\\/wpush\\/v2\\/)[A-Za-z0-9_:.\\/=+-]{20,1800}$/)"
+          },
+          "keys": {
+            ".validate": "newData.hasChildren(['p256dh','auth'])",
+            "p256dh": {
+              ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{87}=?$/)"
+            },
+            "auth": {
+              ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z0-9_-]{22}(==)?$/)"
+            },
+            "$other": {
+              ".validate": false
+            }
+          },
+          "deviceId": {
+            ".validate": "newData.val() == 'paro'"
+          },
+          "enabled": {
+            ".validate": "newData.val() == true"
+          },
+          "createdAt": {
+            ".validate": "newData.isNumber() && newData.val() == now"
+          },
+          "$other": {
+            ".validate": false
+          },
+          "owner": {
+            ".validate": "newData.isBoolean() && newData.val() == (auth.token.email == 'owner@example.invalid')"
+          }
+        }
+      },
+      ".read": "(auth != null && auth.uid == root.child('deviceAccess').child('paro').child('uid').val()) || (auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val())"
+    },
+    "notificationRuntime": {
+      ".read": false,
+      ".write": false
+    },
+    "notificationTests": {
+      ".read": false,
+      ".write": false
+    },
+    "pelletStock": {
+      "$deviceId": {
+        ".read": "(((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))) || ((auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val()) && $deviceId == 'paro')",
+        "$entry": {
+          ".write": "(((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))) && !data.exists() && newData.exists() && root.child('devices').child($deviceId).child('telemetry').child('ready').val() == true && root.child('devices').child($deviceId).child('telemetry').child('updatedAt').val() > now - 30000",
+          ".validate": "newData.hasChildren(['kind','kg','counter','at','recordedAt','uid']) && ((newData.child('kind').val() == 'full' && newData.child('kg').val() == 30) || (newData.child('kind').val() == 'add' && newData.child('kg').val() > 0) || newData.child('kind').val() == 'remaining' || ((newData.child('kind').val() == 'none' || newData.child('kind').val() == 'unknown') && newData.child('kg').val() == 0)) && (($entry.matches(/^manual-[a-f0-9-]{36}$/) && (newData.child('kind').val() == 'full' || newData.child('kind').val() == 'remaining') && newData.child('counter').val() == root.child('devices').child($deviceId).child('telemetry').child('state/sensors/pellets_total_kg').val() && newData.child('at').val() == now) || ($entry.matches(/^[a-f0-9]{16}-[0-9]+$/) && root.child('devices').child($deviceId).child('telemetry').child('state/hopper/events').child($entry).exists() && newData.child('kind').val() != 'remaining' && newData.child('counter').val() == root.child('devices').child($deviceId).child('telemetry').child('state/hopper/events').child($entry).child('counter').val() && ((root.child('devices').child($deviceId).child('telemetry').child('state/hopper/events').child($entry).child('at').val() > 0 && newData.child('at').val() == root.child('devices').child($deviceId).child('telemetry').child('state/hopper/events').child($entry).child('at').val()) || (root.child('devices').child($deviceId).child('telemetry').child('state/hopper/events').child($entry).child('at').val() == 0 && newData.child('at').val() == now))))",
+          "kind": {
+            ".validate": "newData.val() == 'full' || newData.val() == 'add' || newData.val() == 'none' || newData.val() == 'unknown' || newData.val() == 'remaining'"
+          },
+          "kg": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 30"
+          },
+          "counter": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000000"
+          },
+          "at": {
+            ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= now"
+          },
+          "recordedAt": {
+            ".validate": "newData.val() == now"
+          },
+          "uid": {
+            ".validate": "newData.val() == auth.uid"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "devicePushTests": {
+      "$deviceId": {
+        ".read": "auth != null && auth.uid == root.child('deviceAccess').child($deviceId).child('uid').val()",
+        "$uid": {
+          ".write": "(((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))) && auth.uid == $uid && $deviceId == 'paro' && newData.exists() && (!data.exists() || data.child('createdAt').val() < now - 15000)",
+          ".validate": "newData.hasChildren(['nonce','subscription','createdAt','expiresAt']) && root.child('pushSubscriptions').child($uid).child(newData.child('subscription').val()).child('enabled').val() == true",
+          "nonce": {
+            ".validate": "newData.isString() && newData.val().matches(/^[a-f0-9-]{36}$/)"
+          },
+          "subscription": {
+            ".validate": "newData.isString() && newData.val().matches(/^[a-f0-9]{64}$/)"
+          },
+          "createdAt": {
+            ".validate": "newData.val() == now"
+          },
+          "expiresAt": {
+            ".validate": "newData.isNumber() && newData.val() > now && newData.val() <= now + 60000"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "devicePushReceipts": {
+      "$deviceId": {
+        "$uid": {
+          ".read": "(((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))) && auth.uid == $uid && $deviceId == 'paro'",
+          ".write": "(auth != null && auth.uid == root.child('deviceAccess').child($deviceId).child('uid').val()) && newData.exists()",
+          ".validate": "newData.hasChildren(['nonce','status','http','updatedAt']) && newData.child('nonce').val() == root.child('devicePushTests').child($deviceId).child($uid).child('nonce').val()",
+          "nonce": {
+            ".validate": "newData.isString() && newData.val().matches(/^[a-f0-9-]{36}$/)"
+          },
+          "status": {
+            ".validate": "newData.val() == 'accepted' || newData.val() == 'failed'"
+          },
+          "http": {
+            ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 599"
+          },
+          "updatedAt": {
+            ".validate": "newData.val() == now"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "watchdogAccess": {
+      ".read": false,
+      ".write": false
+    },
+    "watchdogConfig": {
+      "paro": {
+        ".read": "(((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))) || (auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val())",
+        ".write": false
+      }
+    },
+    "watchdogRuntime": {
+      "paro": {
+        ".read": "(auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val())",
+        ".write": "(auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val()) && newData.exists()",
+        ".validate": "newData.hasChildren(['version','phase','reason','lastSeen','since','sequence','eventKind','eventAt','pending','lastTest','lease','leaseUntil','checkedAt'])",
+        "version": {
+          ".validate": "newData.val() == 1"
+        },
+        "phase": {
+          ".validate": "newData.val() == 'online' || newData.val() == 'pending' || newData.val() == 'offline'"
+        },
+        "reason": {
+          ".validate": "newData.val() == 'online' || newData.val() == 'module' || newData.val() == 'stove'"
+        },
+        "lastSeen": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 2000"
+        },
+        "since": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now"
+        },
+        "sequence": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000"
+        },
+        "eventKind": {
+          ".validate": "newData.val() == 'none' || newData.val() == 'offline' || newData.val() == 'recovered'"
+        },
+        "eventAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now"
+        },
+        "pending": {
+          ".validate": "newData.isBoolean()"
+        },
+        "lastTest": {
+          ".validate": "newData.isString() && (newData.val() == '' || newData.val().matches(/^[a-f0-9-]{36}$/))"
+        },
+        "lease": {
+          ".validate": "newData.isString() && (newData.val() == '' || newData.val().matches(/^[a-f0-9-]{36}$/))"
+        },
+        "leaseUntil": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 45000"
+        },
+        "checkedAt": {
+          ".validate": "newData.val() == now"
+        },
+        "delivered": {
+          "$id": {
+            ".validate": "$id.matches(/^[a-f0-9]{64}$/) && newData.val() == true"
+          }
+        },
+        "$other": {
+          ".validate": false
+        },
+        "absenceId": {
+          ".validate": "newData.isString() && (newData.val() == '' || newData.val().matches(/^[a-f0-9-]{36}$/))"
+        },
+        "absenceDelivered": {
+          "$id": {
+            ".validate": "$id.matches(/^[a-f0-9]{64}$/) && newData.val() == true"
+          }
+        }
+      }
+    },
+    "watchdogStatus": {
+      "paro": {
+        ".read": "((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))",
+        ".write": "(auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val()) && newData.exists()",
+        ".validate": "newData.hasChildren(['checkedAt','lastSeen','phase','lastEventAt','http'])",
+        "checkedAt": {
+          ".validate": "newData.val() == now"
+        },
+        "lastSeen": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 2000"
+        },
+        "phase": {
+          ".validate": "newData.val() == 'online' || newData.val() == 'pending' || newData.val() == 'offline'"
+        },
+        "lastEventAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now"
+        },
+        "http": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 599"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "watchdogTests": {
+      "paro": {
+        ".read": "(auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val())",
+        ".write": false
+      }
+    },
+    "watchdogTestReceipt": {
+      "paro": {
+        ".read": "((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))",
+        ".write": "(auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val()) && newData.exists()",
+        ".validate": "newData.hasChildren(['nonce','status','http','updatedAt']) && newData.child('nonce').val() == root.child('watchdogTests/paro/nonce').val()",
+        "nonce": {
+          ".validate": "newData.isString() && newData.val().matches(/^[a-f0-9-]{36}$/)"
+        },
+        "status": {
+          ".validate": "newData.val() == 'accepted' || newData.val() == 'failed'"
+        },
+        "http": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 599"
+        },
+        "updatedAt": {
+          ".validate": "newData.val() == now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "absencePlans": {
+      "paro": {
+        ".read": "(((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))) || (auth != null && auth.uid == root.child('watchdogAccess/paro/uid').val()) || (auth != null && auth.uid == root.child('deviceAccess/paro/uid').val())",
+        ".write": "((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true)) && newData.exists()",
+        ".validate": "newData.hasChildren(['id','revision','active','returnDate','remindAt','confirmation','updatedAt','uid']) && ((!data.exists() && newData.child('revision').val() == 1) || (data.exists() && newData.child('revision').val() == data.child('revision').val() + 1 && (((newData.child('returnDate').val() == data.child('returnDate').val() && newData.child('active').val() == data.child('active').val()) && newData.child('id').val() == data.child('id').val()) || ((newData.child('returnDate').val() != data.child('returnDate').val() || newData.child('active').val() != data.child('active').val()) && newData.child('id').val() != data.child('id').val())))) && ((newData.child('returnDate').val() == '' && newData.child('remindAt').val() == 0 && newData.child('confirmation').val() == 'unknown') || (newData.child('returnDate').val() != '' && newData.child('remindAt').val() > 0))",
+        "id": {
+          ".validate": "newData.isString() && newData.val().matches(/^[a-f0-9-]{36}$/)"
+        },
+        "revision": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() > 0 && newData.val() < 1000000000"
+        },
+        "active": {
+          ".validate": "newData.isBoolean()"
+        },
+        "returnDate": {
+          ".validate": "newData.isString() && (newData.val() == '' || newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/))"
+        },
+        "remindAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 732 * 86400000"
+        },
+        "confirmation": {
+          ".validate": "newData.val() == 'pending' || newData.val() == 'confirmed' || newData.val() == 'unknown'"
+        },
+        "updatedAt": {
+          ".validate": "newData.val() == now"
+        },
+        "uid": {
+          ".validate": "newData.val() == auth.uid"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "homeConfig": {
+      "paro": {
+        ".read": "(((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))) || (auth != null && auth.uid == root.child('deviceAccess/paro/uid').val())",
+        ".write": "((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true)) && newData.exists()",
+        ".validate": "newData.hasChildren(['night_end_minute','updatedAt','uid'])",
+        "night_end_minute": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1439"
+        },
+        "updatedAt": {
+          ".validate": "newData.val() == now"
+        },
+        "uid": {
+          ".validate": "newData.val() == auth.uid"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "pelletAlertRuntime": {
+      "paro": {
+        ".read": "(auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val())",
+        ".write": "(auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val()) && newData.exists()",
+        ".validate": "newData.hasChildren([\"version\", \"fired\", \"sequence\", \"eventLevel\", \"eventAt\", \"pending\", \"lastTest\", \"lease\", \"leaseUntil\", \"checkedAt\"])",
+        "version": {
+          ".validate": "newData.val() == 1"
+        },
+        "fired": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 7"
+        },
+        "sequence": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1000000000"
+        },
+        "eventLevel": {
+          ".validate": "newData.val() == 0 || newData.val() == 10 || newData.val() == 20 || newData.val() == 50"
+        },
+        "eventAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now"
+        },
+        "pending": {
+          ".validate": "newData.isBoolean()"
+        },
+        "lastTest": {
+          ".validate": "newData.isString() && (newData.val() == '' || newData.val().matches(/^[a-f0-9-]{36}$/))"
+        },
+        "lease": {
+          ".validate": "newData.isString() && (newData.val() == '' || newData.val().matches(/^[a-f0-9-]{36}$/))"
+        },
+        "leaseUntil": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 45000"
+        },
+        "checkedAt": {
+          ".validate": "newData.val() == now"
+        },
+        "delivered": {
+          "$id": {
+            ".validate": "$id.matches(/^[a-f0-9]{64}$/) && newData.val() == true"
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "pelletAlertStatus": {
+      "paro": {
+        ".read": "((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))",
+        ".write": "(auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val()) && newData.exists()",
+        ".validate": "newData.hasChildren(['checkedAt','lastValidAt','level','reason','http','lastEventAt'])",
+        "checkedAt": {
+          ".validate": "newData.val() == now"
+        },
+        "lastEventAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now"
+        },
+        "http": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 599"
+        },
+        "$other": {
+          ".validate": false
+        },
+        "lastValidAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 2000"
+        },
+        "level": {
+          ".validate": "newData.val() == 0 || newData.val() == 10 || newData.val() == 20 || newData.val() == 50"
+        },
+        "reason": {
+          ".validate": "newData.val() == 'ready' || newData.val() == 'offline' || newData.val() == 'pending' || newData.val() == 'gap' || newData.val() == 'reset' || newData.val() == 'initial' || newData.val() == 'overflow' || newData.val() == 'counter' || newData.val() == 'journal'"
+        }
+      }
+    },
+    "pelletAlertTests": {
+      "paro": {
+        ".read": "(auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val())",
+        ".write": false
+      }
+    },
+    "pelletAlertTestReceipt": {
+      "paro": {
+        ".read": "((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))",
+        ".write": "(auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val()) && newData.exists()",
+        ".validate": "newData.hasChildren(['nonce','status','http','updatedAt']) && newData.child('nonce').val() == root.child('pelletAlertTests/paro/nonce').val()",
+        "nonce": {
+          ".validate": "newData.isString() && newData.val().matches(/^[a-f0-9-]{36}$/)"
+        },
+        "status": {
+          ".validate": "newData.val() == 'accepted' || newData.val() == 'failed'"
+        },
+        "http": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 599"
+        },
+        "updatedAt": {
+          ".validate": "newData.val() == now"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "ashEmptyings": {
+      "$deviceId": {
+        ".read": "((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true)) || ((auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val()) && $deviceId == 'paro')",
+        "$entry": {
+          ".write": "(((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))) && $deviceId == 'paro' && !data.exists() && newData.exists() && root.child('devices/paro/telemetry/ready').val() == true && root.child('devices/paro/telemetry/updatedAt').val() > now - 30000",
+          ".validate": "$entry.matches(/^[a-f0-9-]{36}$/) && newData.hasChildren(['at','recordedAt','sampleAt','kg','hours','source','uid'])",
+          "at": {
+            ".validate": "newData.val() == now"
+          },
+          "recordedAt": {
+            ".validate": "newData.val() == now"
+          },
+          "sampleAt": {
+            ".validate": "newData.isNumber() && newData.val() > now - 30000 && newData.val() <= now + 2000 && newData.val() <= root.child('devices/paro/telemetry/updatedAt').val()"
+          },
+          "kg": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000000 && newData.val() == root.child('devices/paro/telemetry/state/sensors/pellets_total_kg').val()"
+          },
+          "hours": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000000 && newData.val() == root.child('devices/paro/telemetry/state/sensors/pellet_hours').val()"
+          },
+          "source": {
+            ".validate": "newData.val() == 'app'"
+          },
+          "uid": {
+            ".validate": "newData.val() == auth.uid"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "ashAlertRuntime": {
+      "paro": {
+        "version": {
+          ".validate": "newData.val() == 1"
+        },
+        "eventAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now"
+        },
+        "lease": {
+          ".validate": "newData.isString() && (newData.val() == '' || newData.val().matches(/^[a-f0-9-]{36}$/))"
+        },
+        "leaseUntil": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 45000"
+        },
+        "checkedAt": {
+          ".validate": "newData.val() == now"
+        },
+        "delivered": {
+          "$id": {
+            ".validate": "$id.matches(/^[a-f0-9]{64}$/) && newData.val() == true"
+          }
+        },
+        "$other": {
+          ".validate": false
+        },
+        ".read": "(auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val())",
+        ".write": "(auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val()) && newData.exists()",
+        ".validate": "newData.hasChildren(['version','cycle','eventAt','lease','leaseUntil','checkedAt'])",
+        "cycle": {
+          ".validate": "newData.isString() && (newData.val() == '' || newData.val().matches(/^[a-f0-9-]{36}$/))"
+        }
+      }
+    },
+    "ashAlertStatus": {
+      "paro": {
+        ".read": "((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))",
+        ".write": "(auth != null && auth.uid == root.child('watchdogAccess').child('paro').child('uid').val()) && newData.exists()",
+        "checkedAt": {
+          ".validate": "newData.val() == now"
+        },
+        "http": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 599"
+        },
+        "lastEventAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now"
+        },
+        "$other": {
+          ".validate": false
+        },
+        ".validate": "newData.hasChildren(['checkedAt','http','lastEventAt','reason','due'])",
+        "due": {
+          ".validate": "newData.isBoolean()"
+        },
+        "reason": {
+          ".validate": "newData.val() == 'initial' || newData.val() == 'offline' || newData.val() == 'counter' || newData.val() == 'reset' || newData.val() == 'learning' || newData.val() == 'ready'"
+        }
+      }
+    },
+    "comfortPlan": {
+      "paro": {
+        ".read": "(((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))) || (auth != null && auth.uid == root.child('deviceAccess/paro/uid').val())",
+        ".write": "(((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true))) && newData.exists()",
+        ".validate": "newData.hasChildren(['version','enabled','day_start_minute','night_start_minute','day_temperature','night_mode','night_temperature','frost_temperature','revision','updatedAt','uid']) && newData.child('day_start_minute').val() < newData.child('night_start_minute').val() && ((!data.exists() && newData.child('revision').val() == 1) || (data.exists() && newData.child('revision').val() == data.child('revision').val()+1))",
+        "version": {
+          ".validate": "newData.val() == 1"
+        },
+        "enabled": {
+          ".validate": "newData.isBoolean()"
+        },
+        "night_mode": {
+          ".validate": "newData.val() == 'frost' || newData.val() == 'temperature'"
+        },
+        "updatedAt": {
+          ".validate": "newData.val() == now"
+        },
+        "uid": {
+          ".validate": "newData.val() == auth.uid"
+        },
+        "day_start_minute": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1439"
+        },
+        "night_start_minute": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 0 && newData.val() <= 1439"
+        },
+        "day_temperature": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 14 && newData.val() <= 28"
+        },
+        "night_temperature": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 14 && newData.val() <= 28"
+        },
+        "frost_temperature": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 4 && newData.val() <= 10"
+        },
+        "revision": {
+          ".validate": "newData.isNumber() && newData.val() % 1 == 0 && newData.val() >= 1 && newData.val() <= 1000000000"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "statisticsAccess": {
+      ".read": false,
+      ".write": false
+    },
+    "statistics": {
+      "$deviceId": {
+        ".read": "$deviceId == 'paro' && (((auth != null && auth.token.email_verified == true && auth.token.email == 'owner@example.invalid' && auth.token.firebase.sign_in_provider == 'google.com') || ((auth != null && auth.token.email_verified == true && auth.token.firebase.sign_in_provider == 'google.com') && root.child('members').child(auth.uid).child('enabled').val() == true)))",
+        "days": {
+          ".read": "($deviceId == 'paro' && (auth != null && auth.uid == root.child('statisticsAccess/paro/uid').val()))",
+          "$date": {
+            ".validate": "newData.hasChildren([\"date\", \"startAt\", \"endAt\", \"firstAt\", \"observedAt\", \"kg\", \"counterHours\", \"boundaryKg\", \"pelletMs\", \"woodMs\", \"transitionMs\", \"idleMs\", \"missingMs\", \"resets\", \"partial\", \"updatedAt\"]) && newData.child('endAt').val() - newData.child('startAt').val() >= 82800000 && newData.child('endAt').val() - newData.child('startAt').val() <= 90000000 && newData.child('firstAt').val() >= newData.child('startAt').val() && newData.child('firstAt').val() < newData.child('endAt').val() && newData.child('observedAt').val() >= newData.child('firstAt').val() && newData.child('pelletMs').val() + newData.child('woodMs').val() + newData.child('transitionMs').val() + newData.child('idleMs').val() + newData.child('missingMs').val() <= newData.child('endAt').val()-newData.child('startAt').val() && newData.child('date').val() == $date && (!data.exists() || (newData.child('observedAt').val() >= data.child('observedAt').val() && newData.child('date').val() == data.child('date').val() && newData.child('startAt').val() == data.child('startAt').val() && newData.child('endAt').val() == data.child('endAt').val()))",
+            "date": {
+              ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)"
+            },
+            "partial": {
+              ".validate": "newData.isBoolean()"
+            },
+            "startAt": {
+              ".validate": "newData.isNumber() && newData.val() >= 1700000000000 && newData.val() <= now + 5000"
+            },
+            "firstAt": {
+              ".validate": "newData.isNumber() && newData.val() >= 1700000000000 && newData.val() <= now + 5000"
+            },
+            "observedAt": {
+              ".validate": "newData.isNumber() && newData.val() >= 1700000000000 && newData.val() <= now + 5000"
+            },
+            "endAt": {
+              ".validate": "newData.isNumber() && newData.val() >= 1700000000000 && newData.val() <= now + 90000000"
+            },
+            "kg": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2000"
+            },
+            "boundaryKg": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2000"
+            },
+            "counterHours": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "pelletMs": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 90000000"
+            },
+            "woodMs": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 90000000"
+            },
+            "transitionMs": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 90000000"
+            },
+            "idleMs": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 90000000"
+            },
+            "missingMs": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 90000000"
+            },
+            "resets": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000"
+            },
+            "updatedAt": {
+              ".validate": "newData.isNumber() && newData.val() == now"
+            },
+            "$other": {
+              ".validate": false
+            },
+            ".write": "($deviceId == 'paro' && (auth != null && auth.uid == root.child('statisticsAccess/paro/uid').val())) && (newData.exists() || (data.exists() && data.child('endAt').val() < now - 157852800000))"
+          }
+        },
+        "status": {
+          ".write": "($deviceId == 'paro' && (auth != null && auth.uid == root.child('statisticsAccess/paro/uid').val())) && newData.exists()",
+          ".validate": "newData.hasChildren([\"version\", \"startedAt\", \"observedAt\", \"lastValidAt\", \"online\", \"unassignedKg\", \"unassignedHours\", \"resets\", \"retentionDays\", \"pollSeconds\", \"updatedAt\"]) && (!data.exists() || newData.child('observedAt').val() >= data.child('observedAt').val())",
+          "version": {
+            ".validate": "newData.val() == 1"
+          },
+          "online": {
+            ".validate": "newData.isBoolean()"
+          },
+          "retentionDays": {
+            ".validate": "newData.val() == 1827"
+          },
+          "pollSeconds": {
+            ".validate": "newData.val() == 60"
+          },
+          "updatedAt": {
+            ".validate": "newData.isNumber() && newData.val() == now"
+          },
+          "$other": {
+            ".validate": false
+          },
+          "startedAt": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 5000"
+          },
+          "observedAt": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 5000"
+          },
+          "lastValidAt": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 5000"
+          },
+          "unassignedKg": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000000.0"
+          },
+          "unassignedHours": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000000.0"
+          },
+          "resets": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000000.0"
+          },
+          ".read": "($deviceId == 'paro' && (auth != null && auth.uid == root.child('statisticsAccess/paro/uid').val()))"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "statisticsRuntime": {
+      "$deviceId": {
+        ".read": "($deviceId == 'paro' && (auth != null && auth.uid == root.child('statisticsAccess/paro/uid').val()))",
+        ".write": "($deviceId == 'paro' && (auth != null && auth.uid == root.child('statisticsAccess/paro/uid').val())) && newData.exists()",
+        ".validate": "newData.hasChildren([\"version\", \"startedAt\", \"tick\", \"at\", \"lastKind\", \"lastReady\", \"gap\", \"unassignedKg\", \"unassignedHours\", \"resets\", \"day\"]) && (!data.exists() || newData.child('tick').val() > data.child('tick').val())",
+        "version": {
+          ".validate": "newData.val() == 1"
+        },
+        "lastReady": {
+          ".validate": "newData.isBoolean()"
+        },
+        "gap": {
+          ".validate": "newData.isBoolean()"
+        },
+        "lastKind": {
+          ".validate": "newData.val() == 'pellet' || newData.val() == 'wood' || newData.val() == 'transition' || newData.val() == 'idle' || newData.val() == 'missing'"
+        },
+        "day": {
+          ".validate": "newData.hasChildren([\"date\", \"startAt\", \"endAt\", \"firstAt\", \"observedAt\", \"kg\", \"counterHours\", \"boundaryKg\", \"pelletMs\", \"woodMs\", \"transitionMs\", \"idleMs\", \"missingMs\", \"resets\", \"partial\"]) && newData.child('endAt').val() - newData.child('startAt').val() >= 82800000 && newData.child('endAt').val() - newData.child('startAt').val() <= 90000000 && newData.child('firstAt').val() >= newData.child('startAt').val() && newData.child('firstAt').val() < newData.child('endAt').val() && newData.child('observedAt').val() >= newData.child('firstAt').val() && newData.child('pelletMs').val() + newData.child('woodMs').val() + newData.child('transitionMs').val() + newData.child('idleMs').val() + newData.child('missingMs').val() <= newData.child('endAt').val()-newData.child('startAt').val()",
+          "date": {
+            ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)"
+          },
+          "partial": {
+            ".validate": "newData.isBoolean()"
+          },
+          "startAt": {
+            ".validate": "newData.isNumber() && newData.val() >= 1700000000000 && newData.val() <= now + 5000"
+          },
+          "firstAt": {
+            ".validate": "newData.isNumber() && newData.val() >= 1700000000000 && newData.val() <= now + 5000"
+          },
+          "observedAt": {
+            ".validate": "newData.isNumber() && newData.val() >= 1700000000000 && newData.val() <= now + 5000"
+          },
+          "endAt": {
+            ".validate": "newData.isNumber() && newData.val() >= 1700000000000 && newData.val() <= now + 90000000"
+          },
+          "kg": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2000"
+          },
+          "boundaryKg": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2000"
+          },
+          "counterHours": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+          },
+          "pelletMs": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 90000000"
+          },
+          "woodMs": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 90000000"
+          },
+          "transitionMs": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 90000000"
+          },
+          "idleMs": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 90000000"
+          },
+          "missingMs": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 90000000"
+          },
+          "resets": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "pending": {
+          "$date": {
+            ".validate": "newData.hasChildren([\"date\", \"startAt\", \"endAt\", \"firstAt\", \"observedAt\", \"kg\", \"counterHours\", \"boundaryKg\", \"pelletMs\", \"woodMs\", \"transitionMs\", \"idleMs\", \"missingMs\", \"resets\", \"partial\"]) && newData.child('endAt').val() - newData.child('startAt').val() >= 82800000 && newData.child('endAt').val() - newData.child('startAt').val() <= 90000000 && newData.child('firstAt').val() >= newData.child('startAt').val() && newData.child('firstAt').val() < newData.child('endAt').val() && newData.child('observedAt').val() >= newData.child('firstAt').val() && newData.child('pelletMs').val() + newData.child('woodMs').val() + newData.child('transitionMs').val() + newData.child('idleMs').val() + newData.child('missingMs').val() <= newData.child('endAt').val()-newData.child('startAt').val() && newData.child('date').val() == $date",
+            "date": {
+              ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)"
+            },
+            "partial": {
+              ".validate": "newData.isBoolean()"
+            },
+            "startAt": {
+              ".validate": "newData.isNumber() && newData.val() >= 1700000000000 && newData.val() <= now + 5000"
+            },
+            "firstAt": {
+              ".validate": "newData.isNumber() && newData.val() >= 1700000000000 && newData.val() <= now + 5000"
+            },
+            "observedAt": {
+              ".validate": "newData.isNumber() && newData.val() >= 1700000000000 && newData.val() <= now + 5000"
+            },
+            "endAt": {
+              ".validate": "newData.isNumber() && newData.val() >= 1700000000000 && newData.val() <= now + 90000000"
+            },
+            "kg": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2000"
+            },
+            "boundaryKg": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 2000"
+            },
+            "counterHours": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 100"
+            },
+            "pelletMs": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 90000000"
+            },
+            "woodMs": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 90000000"
+            },
+            "transitionMs": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 90000000"
+            },
+            "idleMs": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 90000000"
+            },
+            "missingMs": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 90000000"
+            },
+            "resets": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "lastCounter": {
+          ".validate": "newData.hasChildren(['at','kg','hours'])",
+          "at": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 5000"
+          },
+          "kg": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000000.0"
+          },
+          "hours": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000000.0"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "$other": {
+          ".validate": false
+        },
+        "startedAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 1700000000000 && newData.val() <= now + 5000"
+        },
+        "at": {
+          ".validate": "newData.isNumber() && newData.val() >= 1700000000000 && newData.val() <= now + 5000"
+        },
+        "tick": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now / 60000 + 1"
+        },
+        "unassignedKg": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000000.0"
+        },
+        "unassignedHours": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000000.0"
+        },
+        "resets": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000000.0"
+        },
+        "cleanupDate": {
+          ".validate": "newData.isString() && newData.val().matches(/^\\d{4}-\\d{2}-\\d{2}$/)"
+        }
+      }
+    }
+  }
+}

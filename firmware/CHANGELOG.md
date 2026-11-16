@@ -1,0 +1,211 @@
+# Changelog
+
+## v4.7.0 (2026-10-21)
+
+### New
+- Bridge > System: choose the size of the history of the exchanges with the stove, 16 kB (new default) or 32 kB. 16 kB leaves 16 kB more memory free, which matters on the LilyGO T-Dongle-S3 with its screen; 32 kB keeps twice as much history when you look for a problem. Applied at the next restart.
+
+### Changes
+- The main loop of the bridge has a larger stack (12 kB instead of 8 kB): it had only 1.3 kB left at rest on the LilyGO T-Dongle-S3.
+
+### Fixes
+- Installing an update from the page on a bridge with the screen switched on no longer ends in a restart or a "download interrupted" error: the screen is paused during the download, which needs the memory it uses. It comes back when the update fails.
+
+## v4.6.0 (2026-10-20)
+
+### New
+- The screen of the LilyGO T-Dongle-S3 speaks English, French, Italian or German: choose it in Bridge > Screen. The first time, it takes the language of the page.
+- The screen of the LilyGO T-Dongle-S3 can be rotated by 180 degrees: tick "Rotate the screen by 180°" in Bridge > Screen (#114).
+- The screen of the LilyGO T-Dongle-S3 wakes up when the stove changes state (it starts, stops...), not only on a press or an alert.
+
+## v4.5.0 (2026-10-20)
+
+### New
+- **Small screen support (LilyGO T-Dongle-S3).** Off by default, switched on in Bridge > Screen by choosing the board (asked twice, then a restart); a "Screen on" switch then turns the screen and its backlight off while locking the screen settings: the pins of other boards may be wired to something else, so the screen is never driven by guesswork. The key shows the animated Open Firenet logo while it waits for the stove, then one value per screen in turn (the logo itself can be one of the screens): stove state (with the flame following it), room temperature and target, flame temperature, power (or the target temperature in comfort mode), address, pellets until service, running hours, Wi-Fi, MQTT and firmware version. The BOOT button moves to the next screen; a stove error, an open hopper, a silent stove or a lost Wi-Fi takes the whole screen. The backlight level is a setting (half brightness by default), and it can be lowered after a chosen time without a press of BOOT or an alert. The serial command `SETDISPLAY:none` switches it off again without the page.
+- **Bridge > Screen** (after System): choose which screens are shown, drag them or use the arrows to put them in order, and set the time per screen. Each card is drawn as the key draws it. Changes are applied together with the Apply button. The choice is kept after a restart (`/api/display`).
+
+### Changes
+- The icons of the page (stove state, cards, tabs and buttons) are now drawn by the page itself instead of emojis, so they look the same on every phone and computer: line icons in colour, and the flame at the top follows the stove: an outline at ignition, filling at start-up, the colours of the logo when heating, fading at burn-off. Nothing is loaded from the internet, so the page looks the same on the bridge's own Wi-Fi. The language list shows FR / EN / IT / DE instead of flag emojis, which Windows does not display.
+
+### Fixes
+- A stove set to the ANIMO make (sensor "fabNumber" = 2) and reporting model 5 is now shown as "ANIMO PURE" instead of "ROCO RAO" (#112). The API has a new `stove.brand` (`RIKA` or `ANIMO`) next to `model_name` (`PURE`); for an ANIMO model the bridge does not know yet, the model name stays the RIKA one.
+- Bridge > System: the update interval is greyed out and empty while "Check automatically for updates" is off; ticking the box fills it with the last choice (24 h at first) and saves it. Before, the interval box could be empty and the choice was refused.
+- Bridge > System: "Checking GitHub for updates..." now appears at once when you click "Check", instead of a short flash of the previous message first.
+- Bridge > System: the automatic update settings and the delay between frames now show "Saved" (or "Could not save") next to the setting, as the Wi-Fi power saving does.
+- Diagnostics: the sensor filter shows the real number of sensors the stove reports instead of a fixed "53".
+
+## v4.4.0 (2026-10-17)
+
+### New
+- **Self-update from GitHub.** The bridge can check for new official firmware releases directly on GitHub and install them with one click from the System tab. The update is cryptographically verified (Minisign Ed25519 signature and SHA-256 hash table) before installation, cannot downgrade to an older release, and refuses to install unless the stove is switched off. For offline or isolated local networks, background checking is disabled by default and generates zero internet traffic.
+- Over MQTT, the bridge publishes the 14 heating schedule time slots (`heatTimeMon1` to `heatTimeSun2`) under `<base>/schedule/...` and in `<base>/state`, so that automation systems using MQTT can read the schedule configured on the stove. (#87)
+
+## v4.3.1 (2026-10-14)
+
+### Changes
+- The Wi-Fi settings and the update password sent over USB by the installer are saved without restarting the bridge. Unplug the bridge and plug it into the stove (or plug it in again) for the Wi-Fi settings to be used. Installers up to 1.11.2 still say the bridge restarts: it does not.
+- A new update password is asked at once. A removed one is still asked until the bridge restarts.
+- MQTT: the air flaps sensors (position and target) are ordinary sensors in Home Assistant and no longer filed under "Diagnostic". (open-firenet-ha#42)
+
+### Fixes
+- On Windows, saving the Wi-Fi settings over USB could end on an error ("os error 22" or "433"): the bridge restarted while the installer was still reading its answer.
+- The update password can also be sent on the USB port of the bridge, not only on its debug port.
+- After a firmware update, a browser could keep showing the page of the previous version, with missing texts (for example "Split Log Check" in English on a German page). The bridge now tells the browser to check for the current page each time. (#105)
+
+## v4.3.0 (2026-10-12)
+
+### New
+- **The Bridge page has three tabs** instead of one long page: Network (Wi-Fi, power saving, access to the page), MQTT, and System (information about the bridge, delay between frames, restart). The tab you chose is remembered.
+- The delay between frames, which was under "Advanced" in the Diagnostics tab, is now in the System tab, and is written in the diagnostic file.
+
+### Fixes
+- The "Scan" button of the Wi-Fi form often left the list on "Scanning..." without any network: the page asked for the result once, too early. It now waits for the scan to finish.
+- The hint "If the button does nothing, open http://192.168.4.1" was shown all the time under the Wi-Fi form. It is now shown only while the bridge runs its own setup network, where it applies.
+- Now and then the bridge lost part of a message of the stove: some values stayed a few seconds behind, and names cut in two (such as "gridMotoerviceCountdown") appeared in the table of all values. The bridge now has room for the whole message. The Diagnostics tab reports the bytes lost, if any.
+
+## v4.2.0 (2026-10-12)
+
+### New
+- **Actual heating power.** The bridge reports the power the stove really runs at (`sensors.power_actual_percent`, MQTT sensor "Actual Heating Power"). In comfort mode the stove sets it itself from the room temperature, so it differs from the power setting. It is 0 when the stove is not heating.
+- **The stove page is simpler.** The cards at the top only show their value, all at the same height, with short titles. Running time, the pellets left before service and the number of ignitions have their own cards. In comfort mode the setpoint is shown beside the room temperature ("20.5 °C → 20°").
+- **Minus and plus buttons** beside every slider, handier than the slider on a computer.
+- **"Apply" buttons** are only active when the value was changed, and show "Sent ✓" once the order is sent.
+- The regulation mode and MultiAir speed buttons, which send their order at once, turn green for a moment when it is sent.
+
+### Fixes
+- On a phone the on/off button had no icon, and in some apps (the page opened inside another app) pressing it did nothing: the confirmation was a browser dialog that those apps do not show. The page now asks for the confirmation itself, also for "Restart" and "Forget Wi-Fi".
+- The "Power" card showed the last power of the stove when it was not heating (for example 44 % in standby). It now shows 0.
+- The setback temperature is set in whole degrees, which is what the stove stores.
+
+## v4.1.1 (2026-10-11)
+
+### Fixes
+- Firmware 2.28: Home Assistant could not add the stove ("Unexpected error"). The bridge decoded the Wi-Fi name returned by the stove as if it were encoded, which it is not on this firmware, and produced a character that is not valid text; Home Assistant then refused the whole answer of `/api/state`. The name is now kept as the stove returns it. (open-firenet-ha#38)
+- The answers of the API are always valid text, whatever the stove sends: a character that is not is replaced by "�". (open-firenet-ha#38)
+
+## v4.1.0 (2026-10-10)
+
+### Breaking changes
+- The stove is reported as "Off" (state `off`) when it is switched off, and as "Standby" only when it is switched on and waits for a heat demand. Both used to be reported as "Standby": **an automation or a script that tests the state `standby` to know that the stove is off must now test `off`.** (#89)
+
+### Fixes
+- Combined wood and pellet stoves: the states of wood operation are now named instead of "Unknown": "Split Log Check" (state `splitlog_check`), "Split Log" (`splitlog`), "Put On Split Logs" (`splitlog_refuel`) and "Do Not Put Logs" (`splitlog_no_refuel`), which an automation can use, and the stove is reported as burning in split log mode. The last two follow the combustion chamber temperature as the stove's own screen does (300 to 350 °C, and below 300 °C). Read on an INDUO on firmware 2.30. (#89)
+- Web page: the MultiAir settings are now shown for a CONNECT too, a model RIKA sells with one or two MultiAir outlets.
+
+## v4.0.0 (2026-10-08)
+
+### Features
+- Wi-Fi power saving is now a setting of the Bridge tab. It stays on by default, as it has always been: the bridge runs cooler and draws less power, and an answer can wait up to a quarter of a second. Switch it off if your bridge often loses the Wi-Fi or if you want it to answer faster; the change applies at once. (#82)
+- Optional password for wireless updates. Set it, or remove it, with the installer while the bridge is plugged into your computer; the installer then asks for it at each wireless update. Without it, nothing changes. A full flash over USB removes it. (#77)
+
+### Changes
+- The web API now answers only the bridge's own page and programs on your network (Home Assistant, the installer, scripts). A page of another website opened in a browser on your network can no longer read the bridge's state or send it commands. Nothing changes for normal use. **If you open the bridge, or have set up Home Assistant, with a name given by your router (for example `open-firenet.lan` or `open-firenet.fritz.box`) or a domain of your own:** the bridge now only answers at its IP address and at `open-firenet.local`. The page tells you so and gives the address to use; add your name once in the Bridge tab, new section "Access to the page", and it works again. (#77)
+- `/api/restart` only accepts POST (the web page already used it). (#77)
+- Web page: the names of the Wi-Fi networks found around are shown as plain text, whatever characters they contain. (#77)
+
+### Fixes
+- Wi-Fi: the bridge now rejoins your network by itself after a drop (router restart, access point update, weak signal). It used to stay off the network until it was restarted. (#82)
+- Wi-Fi: after a power cut, when the bridge starts before your router, it keeps trying to join your network while its setup access point is up, and leaves setup mode as soon as the network answers. It used to stay in setup mode until it was restarted. (#82)
+- Firmware 2.28: changes of the heating schedule, frost protection, eco mode and room sensor offset are now sent to the stove. The page showed them as applied, but they never reached it. (#4)
+- Web page: the MultiAir settings are now shown for a SONO. On any other model that is not known as equipped, a link "My stove has MultiAir: show its settings" brings them up. (#4)
+- Wi-Fi: when a password is set, the bridge only joins an encrypted network. It no longer accepts an open access point that shows the same name as yours. A network without password still works as before; a network still protected by the old WEP is no longer joined.
+- A command received in the first seconds after the bridge starts, before the stove has sent its settings, could write wrong settings to the stove (for example switch it on). The bridge now refuses commands until it knows the stove's settings, and answers "stove not ready"; Home Assistant and scripts simply retry. (#77)
+- Commands are only accepted on POST and PUT. (#77)
+- A Wi-Fi network whose name contains a quote or a backslash, yours or a neighbour's, no longer breaks the page or the list of networks. (#77)
+
+## v3.7.0 (2026-10-08)
+
+### Features
+- Diagnostics tab: a "Bridge health" card shows how the bridge itself is doing: cause of the last restart, free memory and its lowest value, chip temperature, Wi-Fi signal and disconnections, time since the last message from the stove, and how many times the link with the stove was established and lost. The same values are in `/api/state` (`health`) and over MQTT (`<base>/health/...`), so Home Assistant can keep their history and raise alerts. (#74)
+- Diagnostics tab: a "Diagnostic file" button downloads a single file to attach to a report, with the bridge health, the link, every value and the exchange log. Its name carries the version and the date, and the Wi-Fi name and the MAC address are masked in it. (#74)
+
+## v3.6.1 (2026-10-07)
+
+### Fixes
+- Firmware 2.28: the stove no longer shows "FIRENET UPDATE" instead of linking. The bridge now announces its version in a single USB message; sent in two pieces, this stove recorded a wrong version and asked to update the stick. (#4)
+- Stove link: when the stove refuses a message after having accepted the bridge, the bridge no longer floods it with about 20 detection messages per second, and no longer sends it the detection messages meant for other firmware versions. (#4)
+
+## v3.6.0 (2026-10-07)
+
+### Features
+- Web page: Italian translation (contributed by @lupin28). (#65)
+- The bridge reports the size of its update slot (`device.ota_slot_bytes` in `/api/state`), so the installer can tell when a firmware is too large for a wireless update instead of failing silently. (open-firenet-installer#16)
+
+## v3.5.0 (2026-10-06)
+
+### Features
+- MQTT: optional encrypted connection (TLS). The broker's certificate is checked against the public authorities, or against your own authority if you paste its certificate, for a home broker with a self-made certificate. (#54)
+
+### Fixes
+- MQTT: after a connection, the bridge no longer queues all its messages at once, which used a lot of memory for a few seconds; and changing the MQTT settings no longer freezes the web page for several seconds.
+- The log of the exchanges with the stove keeps about the last 32 kB instead of 48 kB, to leave more free memory.
+
+## v3.4.0 (2026-10-06)
+
+### Features
+- MQTT: optional Home Assistant discovery. With the option ticked in the Bridge tab, the stove appears by itself in Home Assistant through its MQTT integration, without installing anything: thermostat, heating power, schedule, frost protection and eco mode switches, and the sensors. Off by default; leave it off if you use the Open Firenet integration. (#54)
+- The REST API is now described in an OpenAPI file, `openapi.yaml`: every endpoint, field, type, unit and range, usable with documentation tools and client generators. (#61)
+
+### Fixes
+- Web page: the Save button of the MQTT settings now tells what happened ("Saved" or "Not saved"); it used to give no sign at all.
+- Web page: the emblem next to the title and the browser tab icon are now the actual Open Firenet logo, instead of a simplified drawing, and "Firenet" in the title carries the orange gradient of the logo.
+
+## v3.3.1 (2026-10-05)
+
+### Fixes
+- The name is written "Open Firenet" everywhere, as on the logo, without the hyphen: web page, documentation, and the name reported by `/api/state` and `/api/version`. The Wi-Fi network created for the first setup keeps its name, `Open-Firenet-Setup`.
+- Web page: the hint under the Wi-Fi form ("If the button does nothing, open http://192.168.4.1...") is now shown in the language of the page instead of in French and English at once.
+- Web page: on a first visit the page uses the language of your browser (French, German, or English for any other) instead of always starting in French.
+
+## v3.3.0 (2026-10-04)
+
+### Features
+- Web page reorganised into three tabs at the top: **Stove** (the dashboard and controls, unchanged), **Bridge** (Wi-Fi, MQTT, restart) and **Diagnostics** (link with the stove, exchange log, all values, and the frame delay under "Advanced"). Each tab has its own address (`/#bridge`, `/#diagnostics`), the page opens on Bridge during the first Wi-Fi setup, and the "stove does not answer" banner links to Diagnostics. The stove model, its firmware version and the link state are now shown in the dashboard, and the Stove tab carries a green or grey dot. (#55)
+- MQTT support, optional and off by default, for home automation systems other than Home Assistant (Jeedom, openHAB, Node-RED, Domoticz...). The bridge publishes the stove state to your broker (one JSON message, and one topic per value) with its availability, and accepts the same commands as the REST API (on/off, mode, power, target temperature, MultiAir, schedule...). Set it up in the Bridge tab of the web page; see the MQTT section of the README for the topics. (#52)
+
+### Fixes
+- Target temperature: a value with a half degree (21.5 °C), sent through the REST API or MQTT, is rounded to the whole degree, as the stove sets its target in steps of 1 °C.
+- `/api/state`: the stove model, its firmware version and build are `null` until the stove has sent them. They used to default to a DOMO on firmware 2.29, which looked like real data when the bridge was not linked to the stove at all.
+
+## v3.2.0 (2026-10-03)
+
+### Features
+- The web page now tells why there is no link with the stove: bridge not connected to the stove over USB (wrong port on the board, charge-only cable, stove off), or connected but the stove stays silent. `/api/state` reports the same under `usb` (`host_connected`, `rx_bytes`).
+- Web page header: the Open Firenet version is shown next to the title, and a single badge gives the stove model, its firmware version and the link state (e.g. "DOMO v2.29 connected"). The badge turns grey when the stove is not connected.
+
+### Fixes
+- Stoves on firmware 2.28 (e.g. LIVO): the link works again. v3.0.0 and v3.1.0 talked to these stoves in the wrong message format, so the stove never answered and showed UW29.
+- Web page header on phones: the title and the badge are no longer split over two lines.
+- Web page: while no data has been received from the stove, the page says "Waiting for the stove" and greys out the values and controls, instead of showing a DOMO in standby with zero values.
+
+## v3.1.0 (2026-10-02)
+
+### Features
+- Stoves on firmware 2.26 / 2.27 (e.g. INDUO): the heating schedule, frost protection, room sensor calibration and eco mode can now be changed too, not only on/off, mode, power and temperature.
+
+### Fixes
+- Web page, "Counters & maintenance" card: the two counters no longer overlap on wide screens, and their labels are clearer ("Running time: … h", then "Service in: … kg" right above its bar).
+- Web page: the service bar is now a gauge of what is left before the next service, based on the interval reported by the stove (700 kg when it reports none). It turns orange below 20 %, and hovering it shows the figures.
+- Web page, Settings tab: at most two cards per row; the eco mode card now sits on its own row below frost protection and room temperature calibration.
+- Stoves on firmware 2.28 (e.g. LIVO): commands are sent in the short form again (on/off, mode, power, target temperature), as on 2.26 / 2.27. Since v3.0.0 they received the long form meant for firmware 2.29.
+
+## v3.0.0 (2026-10-01)
+
+### Features
+- Support for stoves running mainboard firmware 2.26 / 2.27 (e.g. INDUO): the link comes up and every stove value is read. On these stoves, on/off, mode, heating power and target temperature can be changed; the other settings (schedule, MultiAir, frost protection, offset) are read-only for now. Stoves on firmware 2.28 are detected but not supported yet.
+- The stove type is detected automatically at startup (firmware 2.29, 2.28 or 2.26 / 2.27), nothing to configure.
+- Every stove value now has a meaningful name, aligned with the official Rika names: warnings (`statusWarning`), air flaps (`airFlaps`, `airFlapsTarget`), error counters, display versions, and more.
+- Eco mode switch in the web page (Stove controls > Settings), enabled only when the stove reports that eco mode is possible.
+- Eco mode can be read and changed: `eco_mode` / `eco_mode_possible` in `/api/state`, `ecoMode` in `/api/controls` (firmware 2.29; read-only on 2.26 / 2.27 for now). Settings now use their official Rika names too (`ecoMode` instead of `reserved6`, `debug0`…`debug4`).
+- `/api/state` now reports the warning code (`warning_code`), the air flap position and target in % (`air_flaps_percent`, `air_flaps_target_percent`), and whether a room sensor is connected (`room_sensor_connected`).
+
+### Breaking changes
+- Removed the legacy endpoints `/api/status`, `/api/sensors` and `/api/arm`, and the duplicate routes `/restart` and `/reset-wifi`: use `/api/state`, `/api/restart` and `/api/forget` instead. The old `docs/api-explorer.html`, which relied on them, is removed too.
+- The reply to `POST /api/controls` is now a short acknowledgement (`ok`, `on`, `mode`, `target_temperature`, `power_percent`); read `/api/state` for the full state.
+
+### Fixes
+- Smaller firmware (about 130 KB less flash, more room for future updates): the web page is stored compressed, and the command parsing of the API was rewritten around a single table.
+- More free memory on the bridge: the debug log (CDC Logs tab, `/log`) keeps 48 KB of history, with repeated lines merged into one.
+- Stoves without a RIKA room sensor no longer show 102.4 °C: the room temperature is reported as unavailable (`null` in the API, `--` on the web page).
+- The link no longer restarts every minute while the stove is idle: the stove only sends changes, so the bridge now checks regularly that it still answers.
+- Default delay between two frames sent to the stove lowered from 600 ms to 150 ms, for faster reactions (still adjustable from 50 to 600 ms in the Logs tab; a value you already set is kept).
