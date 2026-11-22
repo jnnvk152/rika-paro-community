@@ -1,4 +1,4 @@
-import {CAPACITY_KG,stockEstimate,pendingRefills,journalGap} from './pellet-stock.js';
+import {CAPACITY_KG,stockEstimate,pendingRefills,latestRefillPrompt,journalGap} from './pellet-stock.js';
 const fmt=n=>new Intl.NumberFormat("en-GB",{maximumFractionDigits:1}).format(n);
 export class PelletStockView {
  constructor(root,save){
@@ -33,26 +33,26 @@ export class PelletStockView {
   this.enabled=enabled;
   const pending=pendingRefills(state,entries),estimate=stockEstimate(entries,state?.sensors?.pellets_total_kg,pending),journal=state?.device?.capabilities?.hopper_journal===true;
   if(journalGap(state,entries)){estimate.kg=null;estimate.percent=null;estimate.reason='gap';}
-  const ambiguous=estimate.reason==='pending';
+  const ambiguous=estimate.reason==='pending',event=latestRefillPrompt(state,entries),olderUnconfirmed=ambiguous&&!event;
   this.$('.stock-percent').textContent=estimate.percent===null?'— %':`~${estimate.percent} %`;
   this.$('.stock-kg').textContent=estimate.kg===null?'— kg':`~${fmt(estimate.kg)} kg`;
-  this.$('.stock-label').textContent=ambiguous?"Hopper · confirm refill":!fresh?"Hopper · last estimate":"Hopper · estimate";
+  this.$('.stock-label').textContent=olderUnconfirmed?'Hopper · check estimate':ambiguous?"Hopper · confirm refill":!fresh?"Hopper · last estimate":"Hopper · estimate";
   // A cutaway in the PARO's right stone panel shares the same estimate as the text.
   const known=estimate.percent!==null,percent=known?Math.max(0,Math.min(100,estimate.percent)):0,y=226-181*percent/100;
   const fuel=document.getElementById('hopperPellets'),unknown=document.getElementById('hopperUnknown');
   if(fuel){fuel.style.display=known?'':'none';fuel.classList.toggle('hopper-uncertain',ambiguous||!fresh);for(const level of fuel.querySelectorAll('rect')){level.setAttribute('y',y);level.setAttribute('height',181*percent/100);}const surface=fuel.querySelector('path');surface.setAttribute('d',`M139 ${y}h35`);surface.style.display=percent>0?'':'none';}
   if(unknown)unknown.style.display=known?'none':'';
-  this.$('.stock-toggle').setAttribute('aria-label',(estimate.percent===null?"Hopper: amount unknown":`Hopper: about ${estimate.percent} percent, ${fmt(estimate.kg)} kg`)+(ambiguous?", confirm refill":'')+". Open hopper details.");
+  this.$('.stock-toggle').setAttribute('aria-label',(estimate.percent===null?"Hopper: amount unknown":`Hopper: about ${estimate.percent} percent, ${fmt(estimate.kg)} kg`)+(olderUnconfirmed?', check estimate':ambiguous?", confirm refill":'')+". Open hopper details.");
   if(this.hopperButton)this.hopperButton.setAttribute('aria-label',this.$('.stock-toggle').getAttribute('aria-label'));
   this.root.classList.toggle('stock-low',estimate.kg!==null&&estimate.kg<=5);
   this.message(!fresh?"No fresh readings. Showing the last available estimate.":estimate.reason==='gap'?"Some earlier lid events are missing. Set the current amount again.":estimate.reason==='reset'?"The consumption counter reset. Set the current amount again.":ambiguous?"A lid event was detected. Confirm the amount added to update the estimate.":estimate.kg===null?"Start by confirming a full hopper or entering the current amount.":estimate.reason==='overflow'?"The total exceeds 30 kg; the estimate is capped at a full hopper. Correct it if needed.":estimate.kg<=5?"The pellet estimate is low. Check the hopper.":"Consumption is subtracted automatically using the stove’s counter.");
   this.$('.stock-support').textContent=!journal?"Automatic lid detection requires a module update. You can already set the amount manually.":state?.hopper?.durable===false?"The module cannot persist lid events. Check the current pellet amount.":state?.hopper?.open===true?"The lid is open. The refill question appears after you close it.":"The module records lid openings and closures even while the app is closed. It stores the last 32 closures.";
-  const event=pending[0];
+  if(olderUnconfirmed)this.message('Older openings will not be shown one by one. Set the current amount for a reliable estimate.');
   if(event?.id!==this.event?.id){this.$('.stock-other').hidden=true;this.$('.stock-other-button').setAttribute('aria-expanded','false');this.$('.stock-added').value='';}
   const previousEvent=this.event;this.event=event;this.$('.stock-pending').hidden=!event;if(previousEvent&&!event&&this.dialog.open)this.dialog.close();
   if(event&&fresh&&!document.hidden){if(this.dialog.open)this.lastPromptId=event.id;else if(this.lastPromptId!==event.id&&!document.querySelector('dialog[open]')){this.lastPromptId=event.id;this.dialog.showModal();}}
   this.$('.stock-question').hidden=!event;this.$('.stock-choices').hidden=!!event&&!event.at;this.$('.stock-time-unknown').hidden=!event||!!event.at;if(event&&!event.at)this.$('.stock-other').hidden=true;
-  if(event){this.$('.stock-event-time').textContent=(event.at?new Intl.DateTimeFormat("en-GB",{timeZone:'Europe/Ljubljana',day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}).format(event.at):"The lid closure time is unknown. Mark the event as unknown, then set the current amount.")+(pending.length>1?` · another ${pending.length-1} unconfirmed lid events`:'');}
+  if(event){this.$('.stock-event-time').textContent=event.at?new Intl.DateTimeFormat("en-GB",{timeZone:'Europe/Ljubljana',day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'}).format(event.at):"The lid closure time is unknown. Mark the event as unknown, then set the current amount.";}
   this.$('.stock-calibrate summary').textContent=estimate.kg===null?"Set initial amount":"Correct current amount";
   this.disable();
  }

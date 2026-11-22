@@ -4,6 +4,9 @@ export function hopperEvents(state){
  return Object.entries(state?.hopper?.events||{}).filter(([id,e])=>/^[a-f0-9]{16}-[0-9]+$/.test(id)&&counter(e?.counter)&&Number.isFinite(e?.at)&&e.at>=0&&Number.isInteger(e.seq)&&e.seq>0).map(([id,e])=>({id,...e})).sort((a,b)=>a.seq-b.seq);
 }
 export function pendingRefills(state,entries){return hopperEvents(state).filter(e=>!entries?.[e.id]);}
+// Select from the complete journal so answering the newest opening never
+// exposes an older unanswered event as the next prompt.
+export function latestRefillPrompt(state,entries){const latest=hopperEvents(state).at(-1);return latest&&!entries?.[latest.id]?latest:null;}
 export function journalGap(state,entries){
  const first=hopperEvents(state)[0];if(!first||first.seq===1)return false;
  const calibration=Object.values(entries||{}).filter(e=>e.kind==='full'||e.kind==='remaining').sort((a,b)=>b.at-a.at)[0];
